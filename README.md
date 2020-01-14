@@ -5,7 +5,7 @@
 
 > 一个基于vue的网页标尺辅助线工具
 >
-> 在gorkys同学的v-ruler基础上进行了优化和bug fix
+> 在gorkys同学的vue-ruler-tool基础上进行了优化和bug fix
 
 
 ### Feature
