@@ -6,7 +6,8 @@
         :is-scale-revise="true"
         :preset-line="presetLine"
       >
-        <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt="">
+        <!-- <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt=""> -->
+        <iframe src="https://www.baidu.com" width="500" height="300" />
       </vue-ruler-tool>
     </section>
   </div>

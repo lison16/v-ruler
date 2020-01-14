@@ -1,24 +1,38 @@
 <template>
-  <div id="rulerTool" :style="{width : windowWidth + 'px',height : windowHeight + 'px',position:position}" class="ScaleBox" onselectstart="return false;">
+  <div :style="wrapperStyle" class="vue-ruler-wrapper" onselectstart="return false;">
     <section v-show="rulerToggle">
-      <div id="levelRuler" class="ScaleRuler_h" @mousedown.stop="levelDragRuler">
+      <div ref="levelRuler" class="vue-ruler-h" @mousedown.stop="levelDragRuler">
         <span v-for="(item,index) in xScale" :key="index" :style="{left:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
       </div>
-      <div id="verticalRuler" class="ScaleRuler_v" @mousedown.stop="verticalDragRuler">
+      <div ref="verticalRuler" class="vue-ruler-v" @mousedown.stop="verticalDragRuler">
         <span v-for="(item,index) in yScale" :key="index" :style="{top:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
       </div>
-      <div id="levelDottedLine" :style="{top:verticalDottedTop + 'px'}" class="RefDot_h" />
-      <div id="verticalDottedLine" :style="{left:levelDottedLeft + 'px'}" class="RefDot_v" />
-      <div v-for="item in levelLineList" :id="item.id" :title="item.title" :style="{top:item.top+ 'px'}" :key="item.id" class="RefLine_h" @mousedown="dragLevelLine(item.id)" />
-      <div v-for="item in verticalLineList" :id="item.id" :title="item.title" :style="{left:item.left+ 'px'}" :key="item.id" class="RefLine_v" @mousedown="dragVerticalLine(item.id)" />
+      <div :style="{top:verticalDottedTop + 'px'}" class="vue-ruler-ref-dot-h" />
+      <div :style="{left:levelDottedLeft + 'px'}" class="vue-ruler-ref-dot-v" />
+      <div
+        v-for="item in levelLineList"
+        :title="item.title"
+        :style="{top:item.top+ 'px'}"
+        :key="item.id"
+        class="vue-ruler-ref-line-h"
+        @mousedown="dragLevelLine(item.id)"></div>
+      <div
+        v-for="item in verticalLineList"
+        :title="item.title"
+        :style="{left:item.left+ 'px'}"
+        :key="item.id"
+        class="vue-ruler-ref-line-v"
+        @mousedown="dragVerticalLine(item.id)"></div>
     </section>
-    <div id="content" :style="{left: contentLayout.left + 'px', top: contentLayout.top + 'px', padding: left_top+'px 0px 0px '+left_top+'px'}">
+    <div ref="content" class="vue-ruler-content" :style="contentStyle">
       <slot />
     </div>
+    <div v-show="isDrag" class="vue-ruler-content-mask"></div>
   </div>
 </template>
 
 <script>
+import { on, off } from './event.js'
 export default {
   name: 'VueRulerTool',
   components: {},
@@ -78,12 +92,28 @@ export default {
       rulerToggle: true // 标尺辅助线显示开关
     }
   },
+  computed: {
+    wrapperStyle() {
+      return {
+        width : this.windowWidth + 'px',
+        height : this.windowHeight + 'px',
+        position: this.position
+      }
+    },
+    contentStyle() {
+      return {
+        left: this.contentLayout.left + 'px',
+        top: this.contentLayout.top + 'px',
+        padding: this.left_top + 'px 0px 0px ' + this.left_top + 'px'
+      }
+    }
+  },
   watch: {
   },
   mounted () {
-    document.documentElement.addEventListener('mousemove', this.dottedLineMove, true)
-    document.documentElement.addEventListener('mouseup', this.dottedLineUp, true)
-    document.documentElement.addEventListener('keyup', this.keyboard, true)
+    on(document, 'mousemove', this.dottedLineMove)
+    on(document, 'mouseup', this.dottedLineUp)
+    on(document, 'keyup', this.keyboard)
     this.init()
     this.quickGeneration(this.presetLine) // 生成预置参考线
     const self = this // 绑定窗口调整大小onresize事件
@@ -93,10 +123,10 @@ export default {
       self.init()
     }
   },
-  beforeDestroy: function () {
-    document.documentElement.removeEventListener('mousemove', this.dottedLineMove, true)
-    document.documentElement.removeEventListener('mouseup', this.dottedLineUp, true)
-    document.documentElement.removeEventListener('keyup', this.keyboard, true)
+  beforeDestroy () {
+    off(document, 'mousemove', this.dottedLineMove)
+    off(document, 'mouseup', this.dottedLineUp)
+    off(document, 'keyup', this.keyboard)
   },
   methods: {
     init () {
@@ -105,7 +135,7 @@ export default {
     },
     box () {
       if (this.isScaleRevise) { // 根据内容部分进行刻度修正
-        const content = document.getElementById('content')
+        const content = this.$refs.content
         const contentLeft = content.offsetLeft
         const contentTop = content.offsetTop
         for (let i = 0; i < contentLeft; i += 1) {
@@ -127,13 +157,13 @@ export default {
         this.windowWidth = document.documentElement.clientWidth - this.leftSpacing
         this.windowHeight = document.documentElement.clientHeight - this.topSpacing
       }
-      this.rulerWidth = document.getElementById('verticalRuler').clientWidth
-      this.rulerHeight = document.getElementById('levelRuler').clientHeight
+      this.rulerWidth = this.$refs.verticalRuler.clientWidth
+      this.rulerHeight = this.$refs.levelRuler.clientHeight
       this.setSpacing()
     }, // 获取窗口宽与高
     setSpacing () {
-      this.topSpacing = document.getElementById('levelRuler').getBoundingClientRect().y //.offsetParent.offsetTop
-      this.leftSpacing = document.getElementById('verticalRuler').getBoundingClientRect().x// .offsetParent.offsetLeft
+      this.topSpacing = this.$refs.levelRuler.getBoundingClientRect().y //.offsetParent.offsetTop
+      this.leftSpacing = this.$refs.verticalRuler.getBoundingClientRect().x// .offsetParent.offsetLeft
     },
     scaleCalc () {
       for (let i = 0; i < this.windowWidth; i += 1) {
@@ -327,107 +357,132 @@ export default {
 }
 </script>
 
-<style scoped>
-.ScaleBox {
-  left: 0;
-  top: 0;
-  z-index: 999;
-  overflow: hidden;
-  user-select: none;
+<style lang="scss">
+.vue-ruler{
+  &-wrapper {
+    left: 0;
+    top: 0;
+    z-index: 999;
+    overflow: hidden;
+    user-select: none;
+  }
+  &-h,
+  &-v,
+  &-ref-line-v,
+  &-ref-line-h,
+  &-ref-dot-h,
+  &-ref-dot-v {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    z-index: 999;
+  }
+  &-h,
+  &-v,
+  &-ref-line-v,
+  &-ref-line-h,
+  &-ref-dot-h,
+  &-ref-dot-v {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    z-index: 999;
+  }
+
+  &-h {
+    width: 100%;
+    height: 18px;
+    left: 18px;
+    opacity: 0.6;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAASCAMAAAAuTX21AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAlQTFRFMzMzAAAA////BqjYlAAAACNJREFUeNpiYCAdMDKRCka1jGoBA2JZZGshiaCXFpIBQIABAAplBkCmQpujAAAAAElFTkSuQmCC)
+      repeat-x; /*./image/ruler_h.png*/
+  }
+
+  &-v {
+    width: 18px;
+    height: 100%;
+    top: 18px;
+    opacity: 0.6;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAyCAMAAABmvHtTAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAlQTFRFMzMzAAAA////BqjYlAAAACBJREFUeNpiYGBEBwwMTGiAakI0NX7U9aOuHyGuBwgwAH6bBkAR6jkzAAAAAElFTkSuQmCC)
+      repeat-y; /*./image/ruler_v.png*/
+  }
+
+  &-v .n,
+  &-h .n {
+    position: absolute;
+    font: 10px/1 Arial, sans-serif;
+    color: #333;
+    cursor: default;
+  }
+
+  &-v .n {
+    width: 8px;
+    left: 3px;
+    word-wrap: break-word;
+  }
+
+  &-h .n {
+    top: 1px;
+  }
+
+  &-ref-line-v,
+  &-ref-line-h,
+  &-ref-dot-h,
+  &-ref-dot-v {
+    z-index: 998;
+  }
+
+  &-ref-line-h {
+    width: 100%;
+    height: 3px;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAABCAMAAADU3h9xAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFSv//AAAAH8VRuAAAAA5JREFUeNpiYIACgAADAAAJAAE0lmO3AAAAAElFTkSuQmCC)
+      repeat-x left center; /*./image/line_h.png*/
+    cursor: n-resize; /*url(./image/cur_move_h.cur), move*/
+  }
+
+  &-ref-line-v {
+    width: 3px;
+    height: 100%;
+    _height: 9999px;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAICAMAAAAPxGVzAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFSv//AAAAH8VRuAAAAA5JREFUeNpiYEAFAAEGAAAQAAGePof9AAAAAElFTkSuQmCC)
+      repeat-y center top; /*./image/line_v.png*/
+    cursor: w-resize; /*url(./image/cur_move_v.cur), move*/
+  }
+
+  &-ref-dot-h {
+    width: 100%;
+    height: 3px;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFf39/////F3PnHQAAAAJ0Uk5T/wDltzBKAAAAEElEQVR42mJgYGRgZAQIMAAADQAExkizYQAAAABJRU5ErkJggg==)
+      repeat-x left 1px; /*./image/line_dot.png*/
+    cursor: n-resize; /*url(./image/cur_move_h.cur), move*/
+    top: -10px;
+  }
+
+  &-ref-dot-v {
+    width: 3px;
+    height: 100%;
+    _height: 9999px;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFf39/////F3PnHQAAAAJ0Uk5T/wDltzBKAAAAEElEQVR42mJgYGRgZAQIMAAADQAExkizYQAAAABJRU5ErkJggg==)
+      repeat-y 1px top; /*./image/line_dot.png*/
+    cursor: w-resize; /*url(./image/cur_move_v.cur), move*/
+    left: -10px;
+  }
+  &-content {
+    position: absolute;
+    z-index: 997;
+  }
+  &-content-mask{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 998;
+  }
 }
 
-.ScaleRuler_h,
-.ScaleRuler_v,
-.RefLine_v,
-.RefLine_h,
-.RefDot_h,
-.RefDot_v {
-  position: absolute;
-  left: 0;
-  top: 0;
-  overflow: hidden;
-  z-index: 999;
-}
 
-.ScaleRuler_h {
-  width: 100%;
-  height: 18px;
-  left: 18px;
-  opacity: 0.6;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAASCAMAAAAuTX21AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAlQTFRFMzMzAAAA////BqjYlAAAACNJREFUeNpiYCAdMDKRCka1jGoBA2JZZGshiaCXFpIBQIABAAplBkCmQpujAAAAAElFTkSuQmCC)
-    repeat-x; /*./image/ruler_h.png*/
-}
 
-.ScaleRuler_v {
-  width: 18px;
-  height: 100%;
-  top: 18px;
-  opacity: 0.6;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAyCAMAAABmvHtTAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAlQTFRFMzMzAAAA////BqjYlAAAACBJREFUeNpiYGBEBwwMTGiAakI0NX7U9aOuHyGuBwgwAH6bBkAR6jkzAAAAAElFTkSuQmCC)
-    repeat-y; /*./image/ruler_v.png*/
-}
 
-.ScaleRuler_v .n,
-.ScaleRuler_h .n {
-  position: absolute;
-  font: 10px/1 Arial, sans-serif;
-  color: #333;
-  cursor: default;
-}
-
-.ScaleRuler_v .n {
-  width: 8px;
-  left: 3px;
-  word-wrap: break-word;
-}
-
-.ScaleRuler_h .n {
-  top: 1px;
-}
-
-.RefLine_v,
-.RefLine_h,
-.RefDot_h,
-.RefDot_v {
-  z-index: 998;
-}
-
-.RefLine_h {
-  width: 100%;
-  height: 3px;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAABCAMAAADU3h9xAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFSv//AAAAH8VRuAAAAA5JREFUeNpiYIACgAADAAAJAAE0lmO3AAAAAElFTkSuQmCC)
-    repeat-x left center; /*./image/line_h.png*/
-  cursor: n-resize; /*url(./image/cur_move_h.cur), move*/
-}
-
-.RefLine_v {
-  width: 3px;
-  height: 100%;
-  _height: 9999px;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAICAMAAAAPxGVzAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFSv//AAAAH8VRuAAAAA5JREFUeNpiYEAFAAEGAAAQAAGePof9AAAAAElFTkSuQmCC)
-    repeat-y center top; /*./image/line_v.png*/
-  cursor: w-resize; /*url(./image/cur_move_v.cur), move*/
-}
-
-.RefDot_h {
-  width: 100%;
-  height: 3px;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFf39/////F3PnHQAAAAJ0Uk5T/wDltzBKAAAAEElEQVR42mJgYGRgZAQIMAAADQAExkizYQAAAABJRU5ErkJggg==)
-    repeat-x left 1px; /*./image/line_dot.png*/
-  cursor: n-resize; /*url(./image/cur_move_h.cur), move*/
-  top: -10px;
-}
-
-.RefDot_v {
-  width: 3px;
-  height: 100%;
-  _height: 9999px;
-  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAZQTFRFf39/////F3PnHQAAAAJ0Uk5T/wDltzBKAAAAEElEQVR42mJgYGRgZAQIMAAADQAExkizYQAAAABJRU5ErkJggg==)
-    repeat-y 1px top; /*./image/line_dot.png*/
-  cursor: w-resize; /*url(./image/cur_move_v.cur), move*/
-  left: -10px;
-}
-#content {
-  position: absolute;
-}
 </style>
