@@ -1,24 +1,24 @@
 <template>
   <div id="app">
     <section style="margin: 50px;padding: 50px;border: 1px solid red;height: 600px;">
-      <vue-ruler-tool
+      <v-ruler
         :parent="true"
         :is-scale-revise="true"
         :preset-line="presetLine"
       >
         <!-- <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt=""> -->
         <iframe src="https://www.baidu.com" width="500" height="300" />
-      </vue-ruler-tool>
+      </v-ruler>
     </section>
   </div>
 </template>
 
 <script>
-import VueRulerTool from './components/vue-ruler-tool'
+import VRuler from './components/v-ruler'
 export default {
   name: 'app',
   components:{
-    VueRulerTool
+    VRuler
   },
   data () {
     return {

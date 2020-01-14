@@ -34,7 +34,7 @@
 <script>
 import { on, off } from './event.js'
 export default {
-  name: 'VueRulerTool',
+  name: 'VRuler',
   components: {},
   props: {
     position: {

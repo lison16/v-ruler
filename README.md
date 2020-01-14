@@ -1,45 +1,51 @@
 ![标尺辅助线.gif](https://upload-images.jianshu.io/upload_images/12792466-b910b0ac21305c52.gif?imageMogr2/auto-orient/strip)
-# vue-ruler-tool
----
->一个基于vue的网页标尺辅助线工具
+# v-ruler
 
-### 特点
+---
+
+> 一个基于vue的网页标尺辅助线工具
+>
+> 在gorkys同学的v-ruler基础上进行了优化和bug fix
+
+
+### Feature
 - 没有依赖
 - 可拖动的辅助线
 - 快捷键支持
-> 好吧，其实这个组件没什么太多的特点~
 
-### 安装与基本用法
+
+### Install
 ```
-$ npm install --save vue-ruler-tool
+$ npm install --save v-ruler
 ```
-全局注册
+
+### Use
 ```
 import Vue from 'vue'
-import VueRulerTool from 'vue-ruler-tool'
+import VRuler from 'v-ruler'
 
-Vue.component('vue-ruler-tool', VueRulerTool)
+Vue.component('v-ruler', VRuler)
 ```
 你现在就可以使用该组件了
 ```
 <template>
   <div id="app">
-    <vue-ruler-tool
+    <v-ruler
       :content-layout="{left:200,top:100}"
       :is-scale-revise="true"
       :preset-line="presetLine"
     >
       <div class="test"></div>
-    </vue-ruler-tool>
+    </v-ruler>
   </div>
 </template>
 
 <script>
-import VueRulerTool from 'vue-ruler-tool'
+import VRuler from 'v-ruler'
 export default {
   name: 'app',
   components:{
-    VueRulerTool
+    VRuler
   },
   data () {
     return {
@@ -58,7 +64,7 @@ export default {
 
 限制组件大小在父级内部
 ```
-<vue-ruler-tool :parent="true" >
+<v-ruler :parent="true" >
 ```
 **position**
 
@@ -70,7 +76,7 @@ export default {
 
 规定标尺工具的定位类型
 ```
-<vue-ruler-tool :position="'fixed'" >
+<v-ruler :position="'fixed'" >
 ```
 **isHotKey**
 
@@ -80,7 +86,7 @@ export default {
 
 快捷键键开关，目前仅支持快捷键`R`标尺显示开关
 ```
-<vue-ruler-tool :is-hot-key="true" >
+<v-ruler :is-hot-key="true" >
 ```
 **isScaleRevise**
 
@@ -90,7 +96,7 @@ export default {
 
 刻度修正(根据content进行刻度重置),意思就是从内容的位置开始从0计数
 ```
-<vue-ruler-tool :is-scale-revise="ture" >
+<v-ruler :is-scale-revise="ture" >
 ```
 
 **presetLine**
@@ -103,7 +109,7 @@ export default {
 
 预置参考线`l`代表水平线，`v`代表垂直线，`site`为Number类型
 ```
-<vue-ruler-tool :preset-line="[{ type: 'l', site: 100 }, { type: 'v', site: 200 }]" >
+<v-ruler :preset-line="[{ type: 'l', site: 100 }, { type: 'v', site: 200 }]" >
 ```
 **contentLayout**
 
@@ -113,7 +119,7 @@ export default {
 
 内容部分布局分布，及内容摆放位置
 ```
-<vue-ruler-tool :content-layout="{left:200,top:100}" >
+<v-ruler :content-layout="{left:200,top:100}" >
 ```
 ### Methods
 
@@ -123,7 +129,7 @@ export default {
 
 快速设置参考线，一般用来通过弹窗让用户输入
 ```
-<vue-ruler-tool ref='rulerTool' >
+<v-ruler ref='rulerTool' >
 let params=[
         { type: 'l', site: 100 },
         { type: 'v', site: 200 }
