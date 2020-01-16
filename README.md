@@ -88,6 +88,22 @@ export default {
 ```
 <v-ruler :is-hot-key="true" >
 ```
+**visible**
+
+类型: `Boolean`
+
+默认值: `true`
+
+是否显示，如果设为false则隐藏，可通过.sync接收来自`R`快捷键的修改
+```
+<v-ruler :visible.sync="visible" >
+
+data() {
+  return {
+    visible: true
+  }
+}
+```
 **isScaleRevise**
 
 类型: `Boolean`
