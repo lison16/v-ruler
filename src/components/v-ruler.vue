@@ -113,8 +113,11 @@ export default {
     }
   },
   watch: {
-    visible(visible) {
-      this.rulerToggle = visible;
+    visible: {
+      handler(visible) {
+        this.rulerToggle = visible;
+      },
+      immediate: true
     }
   },
   mounted () {
