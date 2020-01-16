@@ -65,6 +65,10 @@ export default {
     parent: {
       type: Boolean,
       default: false
+    },
+    visible: {
+      type: Boolean,
+      default: true
     }
   },
   data () {
@@ -109,6 +113,9 @@ export default {
     }
   },
   watch: {
+    visible(visible) {
+      this.rulerToggle = visible;
+    }
   },
   mounted () {
     on(document, 'mousemove', this.dottedLineMove)
@@ -320,6 +327,7 @@ export default {
         switch ($event.keyCode) {
           case this.keyCode.r:
             this.rulerToggle = !this.rulerToggle
+            this.$emit('update:visible', this.rulerToggle)
             if (this.rulerToggle) {
               this.left_top = 18;
             } else {

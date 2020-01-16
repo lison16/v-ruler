@@ -1,10 +1,12 @@
 <template>
   <div id="app">
+    <button @click="visible = !visible">显示/隐藏标尺</button>
     <section style="margin: 50px;padding: 50px;border: 1px solid red;height: 600px;">
       <v-ruler
         :parent="true"
         :is-scale-revise="true"
         :preset-line="presetLine"
+        :visible.sync="visible"
       >
         <!-- <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt=""> -->
         <iframe src="https://www.baidu.com" width="500" height="300" />
@@ -22,7 +24,8 @@ export default {
   },
   data () {
     return {
-      presetLine: [{ type: 'l', site: 200 }, { type: 'v', site: 100 }]
+      presetLine: [{ type: 'l', site: 200 }, { type: 'v', site: 100 }],
+      visible: true
     }
   }
 }
