@@ -88,6 +88,22 @@ export default {
 ```
 <v-ruler :is-hot-key="true" >
 ```
+**visible**
+
+类型: `Boolean`
+
+默认值: `true`
+
+是否显示，如果设为false则隐藏，可通过.sync接收来自`R`快捷键的修改
+```
+<v-ruler :visible.sync="visible" >
+
+data() {
+  return {
+    visible: true
+  }
+}
+```
 **isScaleRevise**
 
 类型: `Boolean`
@@ -99,7 +115,7 @@ export default {
 <v-ruler :is-scale-revise="ture" >
 ```
 
-**presetLine**
+**value(v-model)**
 
 类型: `Array`
 
@@ -109,7 +125,7 @@ export default {
 
 预置参考线`l`代表水平线，`v`代表垂直线，`site`为Number类型
 ```
-<v-ruler :preset-line="[{ type: 'l', site: 100 }, { type: 'v', site: 200 }]" >
+<v-ruler v-model="[{ type: 'l', site: 100 }, { type: 'v', site: 200 }]" >
 ```
 **contentLayout**
 

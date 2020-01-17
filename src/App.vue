@@ -7,7 +7,7 @@
       <v-ruler
         :parent="true"
         :is-scale-revise="true"
-        :preset-line.sync="presetLine"
+        v-model="presetLine"
         :visible.sync="visible"
       >
         <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt="">
