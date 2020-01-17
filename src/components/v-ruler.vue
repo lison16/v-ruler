@@ -1,28 +1,21 @@
 <template>
   <div :style="wrapperStyle" class="vue-ruler-wrapper" onselectstart="return false;">
     <section v-show="rulerToggle">
-      <div ref="levelRuler" class="vue-ruler-h" @mousedown.stop="levelDragRuler">
+      <div ref="horizontalRuler" class="vue-ruler-h" @mousedown.stop="horizontalDragRuler">
         <span v-for="(item,index) in xScale" :key="index" :style="{left:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
       </div>
       <div ref="verticalRuler" class="vue-ruler-v" @mousedown.stop="verticalDragRuler">
         <span v-for="(item,index) in yScale" :key="index" :style="{top:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
       </div>
       <div :style="{top:verticalDottedTop + 'px'}" class="vue-ruler-ref-dot-h" />
-      <div :style="{left:levelDottedLeft + 'px'}" class="vue-ruler-ref-dot-v" />
+      <div :style="{left:horizontalDottedLeft + 'px'}" class="vue-ruler-ref-dot-v" />
       <div
-        v-for="item in levelLineList"
+        v-for="item in lineList"
         :title="item.title"
-        :style="{top:item.top+ 'px'}"
+        :style="getLineStyle(item)"
         :key="item.id"
-        class="vue-ruler-ref-line-h"
-        @mousedown="dragLevelLine(item.id)"></div>
-      <div
-        v-for="item in verticalLineList"
-        :title="item.title"
-        :style="{left:item.left+ 'px'}"
-        :key="item.id"
-        class="vue-ruler-ref-line-v"
-        @mousedown="dragVerticalLine(item.id)"></div>
+        :class="`vue-ruler-ref-line-${item.type}`"
+        @mousedown="handleDragLine(item)"></div>
     </section>
     <div ref="content" class="vue-ruler-content" :style="contentStyle">
       <slot />
@@ -50,10 +43,10 @@ export default {
     isScaleRevise: {
       type: Boolean, default: false
     }, // 刻度修正(根据content进行刻度重置)
-    presetLine: {
+    value: {
       type: Array,
       default: () => {
-        return [] // { type: 'l', site: 50 }, { type: 'v', site: 180 }
+        return [] // { type: 'h', site: 50 }, { type: 'v', site: 180 }
       }
     }, // 预置参考线
     contentLayout: {
@@ -83,9 +76,7 @@ export default {
       leftSpacing: 0, //  标尺与窗口左间距
       isDrag: false,
       dragFlag: '', // 拖动开始标记，可能值x(从水平标尺开始拖动),y(从垂直标尺开始拖动)
-      levelLineList: [], // 生成的水平线列表
-      verticalLineList: [], // 生成的垂直线列表
-      levelDottedLeft: -999, // 水平虚线位置
+      horizontalDottedLeft: -999, // 水平虚线位置
       verticalDottedTop: -999, // 垂直虚线位置
       rulerWidth: 0, // 垂直标尺的宽度
       rulerHeight: 0, // 水平标尺的高度
@@ -110,6 +101,19 @@ export default {
         top: this.contentLayout.top + 'px',
         padding: this.left_top + 'px 0px 0px ' + this.left_top + 'px'
       }
+    },
+    lineList() {
+      let hCount = 0;
+      let vCount = 0;
+      return this.value.map((item) => {
+        const isH = item.type === 'h'
+        return {
+          id: `${item.type}_${isH ? hCount++ : vCount++}`,
+          type: item.type,
+          title: item.site + 'px',
+          [isH ? 'top' : 'left']: item.site + this.size
+        }
+      })
     }
   },
   watch: {
@@ -125,7 +129,6 @@ export default {
     on(document, 'mouseup', this.dottedLineUp)
     on(document, 'keyup', this.keyboard)
     this.init()
-    this.quickGeneration(this.presetLine) // 生成预置参考线
     const self = this // 绑定窗口调整大小onresize事件
     window.onresize = function () { // 如果直接使用this,this指向的不是vue实例
       self.xScale = []
@@ -142,6 +145,12 @@ export default {
     init () {
       this.box()
       this.scaleCalc()
+    },
+    getLineStyle({type, top, left}) {
+      return type === 'h' ? {top: top+ 'px'} : {left: left + 'px'}
+    },
+    handleDragLine({type, id}) {
+      return type === 'h' ? this.dragHorizontalLine(id) : this.dragVerticalLine(id)
     },
     box () {
       if (this.isScaleRevise) { // 根据内容部分进行刻度修正
@@ -168,11 +177,11 @@ export default {
         this.windowHeight = document.documentElement.clientHeight - this.topSpacing
       }
       this.rulerWidth = this.$refs.verticalRuler.clientWidth
-      this.rulerHeight = this.$refs.levelRuler.clientHeight
+      this.rulerHeight = this.$refs.horizontalRuler.clientHeight
       this.setSpacing()
     }, // 获取窗口宽与高
     setSpacing () {
-      this.topSpacing = this.$refs.levelRuler.getBoundingClientRect().y //.offsetParent.offsetTop
+      this.topSpacing = this.$refs.horizontalRuler.getBoundingClientRect().y //.offsetParent.offsetTop
       this.leftSpacing = this.$refs.verticalRuler.getBoundingClientRect().x// .offsetParent.offsetLeft
     },
     scaleCalc () {
@@ -187,7 +196,7 @@ export default {
         }
       }
     }, // 计算刻度
-    newLevelLine () {
+    newHorizontalLine () {
       this.isDrag = true
       this.dragFlag = 'x'
     }, // 生成一个水平参考线
@@ -205,17 +214,17 @@ export default {
           break
         case 'y':
           if (this.isDrag) {
-            this.levelDottedLeft = $event.pageX - this.leftSpacing
+            this.horizontalDottedLeft = $event.pageX - this.leftSpacing
           }
           break
-        case 'l':
+        case 'h':
           if (this.isDrag) {
             this.verticalDottedTop = $event.pageY - this.topSpacing
           }
           break
         case 'v':
           if (this.isDrag) {
-            this.levelDottedLeft = $event.pageX - this.leftSpacing
+            this.horizontalDottedLeft = $event.pageX - this.leftSpacing
           }
           break
         default:
@@ -226,98 +235,93 @@ export default {
       this.setSpacing()
       if (this.isDrag) {
         this.isDrag = false
+        const cloneList = JSON.parse(JSON.stringify(this.value))
         switch (this.dragFlag) {
           case 'x':
-            this.levelLineList.push(
-              {
-                id: 'levelLine' + this.levelLineList.length + 1,
-                title: $event.pageY - this.topSpacing - this.size + 'px',
-                top: $event.pageY - this.topSpacing
-              }
-            )
+            cloneList.push({
+              type: 'h',
+              site: $event.pageY - this.topSpacing - this.size
+            })
+            this.$emit('input', cloneList)
             break
           case 'y':
-            this.verticalLineList.push(
-              {
-                id: 'verticalLine' + this.verticalLineList.length + 1,
-                title: $event.pageX - this.leftSpacing - this.size + 'px',
-                left: $event.pageX - this.leftSpacing
-              }
-            )
+            cloneList.push({
+              type: 'v',
+              site: $event.pageX - this.leftSpacing - this.size
+            })
+            this.$emit('input', cloneList)
             break
-          case 'l':
+          case 'h':
             if ($event.pageY - this.topSpacing < this.rulerHeight) {
               let Index, id
-              this.levelLineList.forEach((item, index) => {
+              this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
                   Index = index
                   id = item.id
                 }
               })
-              this.levelLineList.splice(Index, 1, {
-                id: id,
-                title: -600 + 'px',
-                top: -600
+              cloneList.splice(Index, 1, {
+                type: 'h',
+                site: -600
               })
             } else {
               let Index, id
-              this.levelLineList.forEach((item, index) => {
+              this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
                   Index = index
                   id = item.id
                 }
               })
-              this.levelLineList.splice(Index, 1, {
-                id: id,
-                title: $event.pageY - this.topSpacing - this.size + 'px',
-                top: $event.pageY - this.topSpacing
+              cloneList.splice(Index, 1, {
+                type: 'h',
+                site: $event.pageY - this.topSpacing - this.size
               })
             }
+            this.$emit('input', cloneList)
             break
           case 'v':
             if ($event.pageX - this.leftSpacing < this.rulerWidth) {
               let Index, id
-              this.verticalLineList.forEach((item, index) => {
+              this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
                   Index = index
                   id = item.id
                 }
               })
-              this.verticalLineList.splice(Index, 1, {
-                id: id,
-                title: -600 + 'px',
-                left: -600
+              cloneList.splice(Index, 1, {
+                type: 'v',
+                site: -600
               })
             } else {
               let Index, id
-              this.verticalLineList.forEach((item, index) => {
+              this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
                   Index = index
                   id = item.id
                 }
               })
-              this.verticalLineList.splice(Index, 1, {
-                id: id,
-                title: $event.pageX - this.leftSpacing - this.size + 'px',
-                left: $event.pageX - this.leftSpacing
+              cloneList.splice(Index, 1, {
+                type: 'v',
+                site: $event.pageX - this.leftSpacing - this.size
               })
             }
+            this.$emit('input', cloneList)
             break
           default:
             break
         }
-        this.verticalDottedTop = this.levelDottedLeft = -10
+        this.verticalDottedTop = this.horizontalDottedLeft = -10
       }
     }, // 虚线松开
-    levelDragRuler () {
-      this.newLevelLine()
+    horizontalDragRuler () {
+      this.newHorizontalLine()
     }, // 水平标尺处按下鼠标
     verticalDragRuler () {
       this.newVerticalLine()
     }, // 垂直标尺处按下鼠标
-    dragLevelLine (id) {
+    dragHorizontalLine (id) {
       this.isDrag = true
-      this.dragFlag = 'l'
+      this.dragFlag = 'h'
       this.dragLineId = id
     }, // 水平线处按下鼠标
     dragVerticalLine (id) {
@@ -340,30 +344,6 @@ export default {
         }
       }
     }, // 键盘事件
-    quickGeneration (params) {
-      if (params !== []) {
-        params.forEach(item => {
-          switch (item.type) {
-            case 'l':
-              this.levelLineList.push({
-                id: 'levelLine' + this.levelLineList.length + 1,
-                title: item.site + 'px',
-                top: item.site + this.size
-              })
-              break
-            case 'v':
-              this.verticalLineList.push({
-                id: 'verticalLine' + this.verticalLineList.length + 1,
-                title: item.site + 'px',
-                left: item.site + this.size
-              })
-              break
-            default:
-              break
-          }
-        })
-      }
-    } // 快速生成参考线
   }
 }
 </script>

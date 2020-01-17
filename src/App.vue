@@ -1,15 +1,17 @@
 <template>
   <div id="app">
     <button @click="visible = !visible">显示/隐藏标尺</button>
+    <button @click="presetLine = []">清空</button>
+    <button @click="presetLine = [{ type: 'h', site: 100 }, { type: 'v', site: 200 }]">修改</button>
     <section style="margin: 50px;padding: 50px;border: 1px solid red;height: 600px;">
       <v-ruler
         :parent="true"
         :is-scale-revise="true"
-        :preset-line="presetLine"
+        :preset-line.sync="presetLine"
         :visible.sync="visible"
       >
-        <!-- <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt=""> -->
-        <iframe src="https://www.baidu.com" width="500" height="300" />
+        <img src="https://cn.vuejs.org/images/logo.png" style="width: 300px;height: 300px;margin: 100px;" alt="">
+        <!-- <iframe src="https://www.baidu.com" width="500" height="300" /> -->
       </v-ruler>
     </section>
   </div>
@@ -24,8 +26,13 @@ export default {
   },
   data () {
     return {
-      presetLine: [{ type: 'l', site: 200 }, { type: 'v', site: 100 }],
+      presetLine: [{ type: 'h', site: 200 }, { type: 'v', site: 100 }],
       visible: true
+    }
+  },
+  watch: {
+    visible(val) {
+      console.log(val)
     }
   }
 }
