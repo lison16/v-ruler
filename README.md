@@ -33,7 +33,7 @@ Vue.component('v-ruler', VRuler)
     <v-ruler
       :content-layout="{left:200,top:100}"
       :is-scale-revise="true"
-      :preset-line="presetLine"
+      v-model="presetLine"
     >
       <div class="test"></div>
     </v-ruler>
