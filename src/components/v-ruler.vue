@@ -5,8 +5,12 @@
     onselectstart="return false;"
   >
     <section v-show="rulerToggle">
-      <div ref="horizontalRuler" @mousedown.stop="horizontalDragRuler">
-        <div v-if = "isScaleRevise" class="vue-ruler-h" :style="{ width: scaleOffset.left + 'px' }">
+      <div ref="horizontalRuler" class="vue-ruler-h-wrap" @mousedown.stop="horizontalDragRuler">
+        <div
+          v-if="isScaleRevise"
+          class="vue-ruler-h"
+          :style="{ width: scaleOffset.left + 'px' }"
+        >
           <span
             v-for="(item, index) in scaleOffset.xMark"
             :key="index"
@@ -31,8 +35,12 @@
           >
         </div>
       </div>
-      <div ref="verticalRuler" @mousedown.stop="verticalDragRuler">
-        <div v-if = "isScaleRevise" class="vue-ruler-v" :style="{ height: scaleOffset.top + 'px' }">
+      <div ref="verticalRuler" class="vue-ruler-v-wrap" @mousedown.stop="verticalDragRuler">
+        <div
+          v-if="isScaleRevise"
+          class="vue-ruler-v"
+          :style="{ height: scaleOffset.top + 'px' }"
+        >
           <span
             v-for="(item, index) in scaleOffset.yMark"
             :key="index"
@@ -458,6 +466,10 @@ export default {
     overflow: hidden;
     z-index: 999;
   }
+  &-h-wrap {
+    width: 100%;
+    height: 18px;
+  }
 
   &-h {
     width: 100%;
@@ -466,6 +478,11 @@ export default {
     opacity: 0.6;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAASCAMAAAAuTX21AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAlQTFRFMzMzAAAA////BqjYlAAAACNJREFUeNpiYCAdMDKRCka1jGoBA2JZZGshiaCXFpIBQIABAAplBkCmQpujAAAAAElFTkSuQmCC)
       repeat-x; /*./image/ruler_h.png*/
+  }
+
+  &-v-wrap {
+    width: 18px;
+    height: 100%;
   }
 
   &-v {
