@@ -1,21 +1,78 @@
 <template>
-  <div :style="wrapperStyle" class="vue-ruler-wrapper" onselectstart="return false;">
+  <div
+    :style="wrapperStyle"
+    class="vue-ruler-wrapper"
+    onselectstart="return false;"
+  >
     <section v-show="rulerToggle">
-      <div ref="horizontalRuler" class="vue-ruler-h" @mousedown.stop="horizontalDragRuler">
-        <span v-for="(item,index) in xScale" :key="index" :style="{left:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
+      <div ref="horizontalRuler" @mousedown.stop="horizontalDragRuler">
+        <div v-if = "isScaleRevise" class="vue-ruler-h" :style="{ width: scaleOffset.left + 'px' }">
+          <span
+            v-for="(item, index) in scaleOffset.xMark"
+            :key="index"
+            :style="{ left: index * 50 + 2 + 'px' }"
+            class="n"
+            >{{ item.id }}</span
+          >
+        </div>
+        <div
+          class="vue-ruler-h"
+          :style="{
+            left: 18 + scaleOffset.left + 'px',
+            width: `calc(100% - ${scaleOffset.left}px)`,
+          }"
+        >
+          <span
+            v-for="(item, index) in xScale"
+            :key="index"
+            :style="{ left: index * 50 + 2 + 'px' }"
+            class="n"
+            >{{ item.id }}</span
+          >
+        </div>
       </div>
-      <div ref="verticalRuler" class="vue-ruler-v" @mousedown.stop="verticalDragRuler">
-        <span v-for="(item,index) in yScale" :key="index" :style="{top:index * 50 + 2 + 'px'}" class="n">{{ item.id }}</span>
+      <div ref="verticalRuler" @mousedown.stop="verticalDragRuler">
+        <div v-if = "isScaleRevise" class="vue-ruler-v" :style="{ height: scaleOffset.top + 'px' }">
+          <span
+            v-for="(item, index) in scaleOffset.yMark"
+            :key="index"
+            :style="{ top: index * 50 + 2 + 'px' }"
+            class="n"
+            >{{ item.id }}</span
+          >
+        </div>
+        <div
+          class="vue-ruler-v"
+          :style="{
+            top: 18 + scaleOffset.top + 'px',
+            height: `calc(100% - ${scaleOffset.top}px)`,
+          }"
+        >
+          <span
+            v-for="(item, index) in yScale"
+            :key="index"
+            :style="{ top: index * 50 + 2 + 'px' }"
+            class="n"
+            >{{ item.id }}</span
+          >
+        </div>
       </div>
-      <div :style="{top:verticalDottedTop + 'px'}" class="vue-ruler-ref-dot-h" />
-      <div :style="{left:horizontalDottedLeft + 'px'}" class="vue-ruler-ref-dot-v" />
+      <div
+        :style="{ top: verticalDottedTop + 'px' }"
+        class="vue-ruler-ref-dot-h"
+      />
+      <div
+        :style="{ left: horizontalDottedLeft + 'px' }"
+        class="vue-ruler-ref-dot-v"
+      />
       <div
         v-for="item in lineList"
         :title="item.title"
         :style="getLineStyle(item)"
         :key="item.id"
         :class="`vue-ruler-ref-line-${item.type}`"
-        @mousedown="handleDragLine(item)"></div>
+        @mousedown="handleDragLine(item)"
+      ></div>
     </section>
     <div ref="content" class="vue-ruler-content" :style="contentStyle">
       <slot />
@@ -25,46 +82,52 @@
 </template>
 
 <script>
-import { on, off } from './event.js'
+import { on, off } from "./event.js";
 export default {
-  name: 'VRuler',
+  name: "VRuler",
   components: {},
   props: {
     position: {
       type: String,
-      default: 'relative',
+      default: "relative",
       validator: function (val) {
-        return ['absolute', 'fixed', 'relative', 'static', 'inherit'].indexOf(val) !== -1
-      }
+        return (
+          ["absolute", "fixed", "relative", "static", "inherit"].indexOf(
+            val
+          ) !== -1
+        );
+      },
     }, // 规定元素的定位类型
     isHotKey: {
-      type: Boolean, default: true
+      type: Boolean,
+      default: true,
     }, // 热键开关
     isScaleRevise: {
-      type: Boolean, default: false
+      type: Boolean,
+      default: false,
     }, // 刻度修正(根据content进行刻度重置)
     value: {
       type: Array,
       default: () => {
-        return [] // { type: 'h', site: 50 }, { type: 'v', site: 180 }
-      }
+        return []; // { type: 'h', site: 50 }, { type: 'v', site: 180 }
+      },
     }, // 预置参考线
     contentLayout: {
       type: Object,
       default: () => {
-        return { top: 0, left: 0 }
-      }
+        return { top: 122.3, left: 106.7 };
+      },
     }, // 内容部分布局
     parent: {
       type: Boolean,
-      default: false
+      default: false,
     },
     visible: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  data () {
+  data() {
     return {
       size: 17,
       left_top: 18, // 内容左上填充
@@ -72,284 +135,298 @@ export default {
       windowHeight: 0, // 窗口高度
       xScale: [], // 水平刻度
       yScale: [], // 垂直刻度
+      scaleOffset: { left: 0, top: 0, xMark: [], yMark: [] }, //预设刻度(水平 & 垂直)
       topSpacing: 0, // 标尺与窗口上间距
       leftSpacing: 0, //  标尺与窗口左间距
       isDrag: false,
-      dragFlag: '', // 拖动开始标记，可能值x(从水平标尺开始拖动),y(从垂直标尺开始拖动)
+      dragFlag: "", // 拖动开始标记，可能值x(从水平标尺开始拖动),y(从垂直标尺开始拖动)
       horizontalDottedLeft: -999, // 水平虚线位置
       verticalDottedTop: -999, // 垂直虚线位置
       rulerWidth: 0, // 垂直标尺的宽度
       rulerHeight: 0, // 水平标尺的高度
-      dragLineId: '', // 被移动线的ID
+      dragLineId: "", // 被移动线的ID
       keyCode: {
-        r: 82
+        r: 82,
       }, // 快捷键参数
-      rulerToggle: true // 标尺辅助线显示开关
-    }
+      rulerToggle: true, // 标尺辅助线显示开关
+    };
   },
   computed: {
     wrapperStyle() {
       return {
-        width : this.windowWidth + 'px',
-        height : this.windowHeight + 'px',
-        position: this.position
-      }
+        width: this.windowWidth + "px",
+        height: this.windowHeight + "px",
+        position: this.position,
+      };
     },
     contentStyle() {
       return {
-        left: this.contentLayout.left + 'px',
-        top: this.contentLayout.top + 'px',
-        padding: this.left_top + 'px 0px 0px ' + this.left_top + 'px'
-      }
+        left: this.contentLayout.left + "px",
+        top: this.contentLayout.top + "px",
+        padding: this.left_top + "px 0px 0px " + this.left_top + "px",
+      };
     },
     lineList() {
       let hCount = 0;
       let vCount = 0;
       return this.value.map((item) => {
-        const isH = item.type === 'h'
+        const isH = item.type === "h";
         return {
           id: `${item.type}_${isH ? hCount++ : vCount++}`,
           type: item.type,
-          title: item.site + 'px',
-          [isH ? 'top' : 'left']: item.site + this.size
-        }
-      })
-    }
+          title: item.site + "px",
+          [isH ? "top" : "left"]: item.site + this.size,
+        };
+      });
+    },
   },
   watch: {
     visible: {
       handler(visible) {
         this.rulerToggle = visible;
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
-  mounted () {
-    on(document, 'mousemove', this.dottedLineMove)
-    on(document, 'mouseup', this.dottedLineUp)
-    on(document, 'keyup', this.keyboard)
-    this.init()
-    const self = this // 绑定窗口调整大小onresize事件
-    window.onresize = function () { // 如果直接使用this,this指向的不是vue实例
-      self.xScale = []
-      self.yScale = []
-      self.init()
-    }
+  mounted() {
+    on(document, "mousemove", this.dottedLineMove);
+    on(document, "mouseup", this.dottedLineUp);
+    on(document, "keyup", this.keyboard);
+    this.init();
+    const self = this; // 绑定窗口调整大小onresize事件
+    window.onresize = function () {
+      // 如果直接使用this,this指向的不是vue实例
+      self.xScale = [];
+      self.yScale = [];
+      self.scaleOffset = { left: 0, top: 0, xMark: [], yMark: [] };
+      self.init();
+    };
   },
-  beforeDestroy () {
-    off(document, 'mousemove', this.dottedLineMove)
-    off(document, 'mouseup', this.dottedLineUp)
-    off(document, 'keyup', this.keyboard)
+  beforeDestroy() {
+    off(document, "mousemove", this.dottedLineMove);
+    off(document, "mouseup", this.dottedLineUp);
+    off(document, "keyup", this.keyboard);
   },
   methods: {
-    init () {
-      this.box()
-      this.scaleCalc()
+    init() {
+      this.box();
+      this.scaleCalc();
     },
-    getLineStyle({type, top, left}) {
-      return type === 'h' ? {top: top+ 'px'} : {left: left + 'px'}
+    getLineStyle({ type, top, left }) {
+      return type === "h" ? { top: top + "px" } : { left: left + "px" };
     },
-    handleDragLine({type, id}) {
-      return type === 'h' ? this.dragHorizontalLine(id) : this.dragVerticalLine(id)
+    handleDragLine({ type, id }) {
+      return type === "h"
+        ? this.dragHorizontalLine(id)
+        : this.dragVerticalLine(id);
     },
-    box () {
-      if (this.isScaleRevise) { // 根据内容部分进行刻度修正
-        const content = this.$refs.content
-        const contentLeft = content.offsetLeft
-        const contentTop = content.offsetTop
+    box() {
+      if (this.isScaleRevise) {
+        // 根据内容部分进行刻度修正
+        const content = this.$refs.content;
+        const contentLeft = content.offsetLeft;
+        const contentTop = content.offsetTop;
+        this.scaleOffset = {
+          left: contentLeft,
+          top: contentTop,
+          xMark: [],
+          yMark: [],
+        };
         for (let i = 0; i < contentLeft; i += 1) {
-          if (i % 50 === 0 && i + 50 <= contentLeft) {
-            this.xScale.push({ id: i })
+          if (i % 50 === 0) {
+            this.scaleOffset.xMark.push({ id: i });
           }
         }
         for (let i = 0; i < contentTop; i += 1) {
-          if (i % 50 === 0 && i + 50 <= contentTop) {
-            this.yScale.push({ id: i })
+          if (i % 50 === 0) {
+            this.scaleOffset.yMark.push({ id: i });
           }
         }
       }
       if (this.parent) {
-        const style = window.getComputedStyle(this.$el.parentNode, null)
-        this.windowWidth = parseInt(style.getPropertyValue('width'), 10)
-        this.windowHeight = parseInt(style.getPropertyValue('height'), 10)
+        const style = window.getComputedStyle(this.$el.parentNode, null);
+        this.windowWidth = parseInt(style.getPropertyValue("width"), 10);
+        this.windowHeight = parseInt(style.getPropertyValue("height"), 10);
       } else {
-        this.windowWidth = document.documentElement.clientWidth - this.leftSpacing
-        this.windowHeight = document.documentElement.clientHeight - this.topSpacing
+        this.windowWidth =
+          document.documentElement.clientWidth - this.leftSpacing;
+        this.windowHeight =
+          document.documentElement.clientHeight - this.topSpacing;
       }
-      this.rulerWidth = this.$refs.verticalRuler.clientWidth
-      this.rulerHeight = this.$refs.horizontalRuler.clientHeight
-      this.setSpacing()
+      this.rulerWidth = this.$refs.verticalRuler.clientWidth;
+      this.rulerHeight = this.$refs.horizontalRuler.clientHeight;
+      this.setSpacing();
     }, // 获取窗口宽与高
-    setSpacing () {
-      this.topSpacing = this.$refs.horizontalRuler.getBoundingClientRect().y //.offsetParent.offsetTop
-      this.leftSpacing = this.$refs.verticalRuler.getBoundingClientRect().x// .offsetParent.offsetLeft
+    setSpacing() {
+      this.topSpacing = this.$refs.horizontalRuler.getBoundingClientRect().y; //.offsetParent.offsetTop
+      this.leftSpacing = this.$refs.verticalRuler.getBoundingClientRect().x; // .offsetParent.offsetLeft
     },
-    scaleCalc () {
+    scaleCalc() {
       for (let i = 0; i < this.windowWidth; i += 1) {
         if (i % 50 === 0) {
-          this.xScale.push({ id: i })
+          this.xScale.push({ id: i });
         }
       }
       for (let i = 0; i < this.windowHeight; i += 1) {
         if (i % 50 === 0) {
-          this.yScale.push({ id: i })
+          this.yScale.push({ id: i });
         }
       }
     }, // 计算刻度
-    newHorizontalLine () {
-      this.isDrag = true
-      this.dragFlag = 'x'
+    newHorizontalLine() {
+      this.isDrag = true;
+      this.dragFlag = "x";
     }, // 生成一个水平参考线
-    newVerticalLine () {
-      this.isDrag = true
-      this.dragFlag = 'y'
+    newVerticalLine() {
+      this.isDrag = true;
+      this.dragFlag = "y";
     }, // 生成一个垂直参考线
-    dottedLineMove ($event) {
-      this.setSpacing()
+    dottedLineMove($event) {
+      this.setSpacing();
       switch (this.dragFlag) {
-        case 'x':
+        case "x":
           if (this.isDrag) {
-            this.verticalDottedTop = $event.pageY - this.topSpacing
+            this.verticalDottedTop = $event.pageY - this.topSpacing;
           }
-          break
-        case 'y':
+          break;
+        case "y":
           if (this.isDrag) {
-            this.horizontalDottedLeft = $event.pageX - this.leftSpacing
+            this.horizontalDottedLeft = $event.pageX - this.leftSpacing;
           }
-          break
-        case 'h':
+          break;
+        case "h":
           if (this.isDrag) {
-            this.verticalDottedTop = $event.pageY - this.topSpacing
+            this.verticalDottedTop = $event.pageY - this.topSpacing;
           }
-          break
-        case 'v':
+          break;
+        case "v":
           if (this.isDrag) {
-            this.horizontalDottedLeft = $event.pageX - this.leftSpacing
+            this.horizontalDottedLeft = $event.pageX - this.leftSpacing;
           }
-          break
+          break;
         default:
-          break
+          break;
       }
     }, // 虚线移动
-    dottedLineUp ($event) {
-      this.setSpacing()
+    dottedLineUp($event) {
+      this.setSpacing();
       if (this.isDrag) {
-        this.isDrag = false
-        const cloneList = JSON.parse(JSON.stringify(this.value))
+        this.isDrag = false;
+        const cloneList = JSON.parse(JSON.stringify(this.value));
         switch (this.dragFlag) {
-          case 'x':
+          case "x":
             cloneList.push({
-              type: 'h',
-              site: $event.pageY - this.topSpacing - this.size
-            })
-            this.$emit('input', cloneList)
-            break
-          case 'y':
+              type: "h",
+              site: $event.pageY - this.topSpacing - this.size,
+            });
+            this.$emit("input", cloneList);
+            break;
+          case "y":
             cloneList.push({
-              type: 'v',
-              site: $event.pageX - this.leftSpacing - this.size
-            })
-            this.$emit('input', cloneList)
-            break
-          case 'h':
+              type: "v",
+              site: $event.pageX - this.leftSpacing - this.size,
+            });
+            this.$emit("input", cloneList);
+            break;
+          case "h":
             if ($event.pageY - this.topSpacing < this.rulerHeight) {
-              let Index, id
+              let Index, id;
               this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
-                  Index = index
-                  id = item.id
+                  Index = index;
+                  id = item.id;
                 }
-              })
+              });
               cloneList.splice(Index, 1, {
-                type: 'h',
-                site: -600
-              })
+                type: "h",
+                site: -600,
+              });
             } else {
-              let Index, id
+              let Index, id;
               this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
-                  Index = index
-                  id = item.id
+                  Index = index;
+                  id = item.id;
                 }
-              })
+              });
               cloneList.splice(Index, 1, {
-                type: 'h',
-                site: $event.pageY - this.topSpacing - this.size
-              })
+                type: "h",
+                site: $event.pageY - this.topSpacing - this.size,
+              });
             }
-            this.$emit('input', cloneList)
-            break
-          case 'v':
+            this.$emit("input", cloneList);
+            break;
+          case "v":
             if ($event.pageX - this.leftSpacing < this.rulerWidth) {
-              let Index, id
+              let Index, id;
               this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
-                  Index = index
-                  id = item.id
+                  Index = index;
+                  id = item.id;
                 }
-              })
+              });
               cloneList.splice(Index, 1, {
-                type: 'v',
-                site: -600
-              })
+                type: "v",
+                site: -600,
+              });
             } else {
-              let Index, id
+              let Index, id;
               this.lineList.forEach((item, index) => {
                 if (item.id === this.dragLineId) {
-                  Index = index
-                  id = item.id
+                  Index = index;
+                  id = item.id;
                 }
-              })
+              });
               cloneList.splice(Index, 1, {
-                type: 'v',
-                site: $event.pageX - this.leftSpacing - this.size
-              })
+                type: "v",
+                site: $event.pageX - this.leftSpacing - this.size,
+              });
             }
-            this.$emit('input', cloneList)
-            break
+            this.$emit("input", cloneList);
+            break;
           default:
-            break
+            break;
         }
-        this.verticalDottedTop = this.horizontalDottedLeft = -10
+        this.verticalDottedTop = this.horizontalDottedLeft = -10;
       }
     }, // 虚线松开
-    horizontalDragRuler () {
-      this.newHorizontalLine()
+    horizontalDragRuler() {
+      this.newHorizontalLine();
     }, // 水平标尺处按下鼠标
-    verticalDragRuler () {
-      this.newVerticalLine()
+    verticalDragRuler() {
+      this.newVerticalLine();
     }, // 垂直标尺处按下鼠标
-    dragHorizontalLine (id) {
-      this.isDrag = true
-      this.dragFlag = 'h'
-      this.dragLineId = id
+    dragHorizontalLine(id) {
+      this.isDrag = true;
+      this.dragFlag = "h";
+      this.dragLineId = id;
     }, // 水平线处按下鼠标
-    dragVerticalLine (id) {
-      this.isDrag = true
-      this.dragFlag = 'v'
-      this.dragLineId = id
+    dragVerticalLine(id) {
+      this.isDrag = true;
+      this.dragFlag = "v";
+      this.dragLineId = id;
     }, // 垂直线处按下鼠标
-    keyboard ($event) {
+    keyboard($event) {
       if (this.isHotKey) {
         switch ($event.keyCode) {
           case this.keyCode.r:
-            this.rulerToggle = !this.rulerToggle
-            this.$emit('update:visible', this.rulerToggle)
+            this.rulerToggle = !this.rulerToggle;
+            this.$emit("update:visible", this.rulerToggle);
             if (this.rulerToggle) {
               this.left_top = 18;
             } else {
               this.left_top = 0;
             }
-            break
+            break;
         }
       }
     }, // 键盘事件
-  }
-}
+  },
+};
 </script>
 
 <style lang="scss">
-.vue-ruler{
+.vue-ruler {
   &-wrapper {
     left: 0;
     top: 0;
@@ -464,7 +541,7 @@ export default {
     position: absolute;
     z-index: 997;
   }
-  &-content-mask{
+  &-content-mask {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -472,8 +549,4 @@ export default {
     z-index: 998;
   }
 }
-
-
-
-
 </style>
