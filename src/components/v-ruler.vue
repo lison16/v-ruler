@@ -115,7 +115,7 @@ export default {
     contentLayout: {
       type: Object,
       default: () => {
-        return { top: 122.3, left: 106.7 };
+        return { top: 0, left: 0 };
       },
     }, // 内容部分布局
     parent: {
