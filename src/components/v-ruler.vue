@@ -457,7 +457,7 @@ export default {
             if (this.rulerToggle) {
               this.left_top = this.leftTtop;
             } else {
-              this.leftTtop = 0;
+              this.left_top = 0;
             }
             break;
         }
