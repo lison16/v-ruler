@@ -8,13 +8,13 @@
       <div ref="horizontalRuler" class="vue-ruler-h-wrap" @mousedown.stop="horizontalDragRuler">
         <div
           v-if="isScaleRevise"
-          class="vue-ruler-h"
-          :style="{ width: scaleOffset.left + 'px' }"
+          class="vue-ruler-h v-ruler-offset-h"
+          :style="{ width: scaleOffset.left + 'px', transform:'rotateY(180deg)'}"
         >
           <span
             v-for="(item, index) in scaleOffset.xMark"
             :key="index"
-            :style="{ left: index * 50 + 2 + 'px' }"
+            :style="{ left: (index+1) * 50 - (item.offsetPx) + 'px', transform:'rotateY(180deg)' }"
             class="n"
             >{{ item.id }}</span
           >
@@ -22,7 +22,7 @@
         <div
           class="vue-ruler-h"
           :style="{
-            left: 18 + scaleOffset.left + 'px',
+            left: 18 + scaleOffset.left - 1 + 'px',
             width: `calc(100% - ${scaleOffset.left}px)`,
           }"
         >
@@ -38,13 +38,13 @@
       <div ref="verticalRuler" class="vue-ruler-v-wrap" @mousedown.stop="verticalDragRuler">
         <div
           v-if="isScaleRevise"
-          class="vue-ruler-v"
-          :style="{ height: scaleOffset.top + 'px' }"
+          class="vue-ruler-v v-ruler-offset-v"
+          :style="{ height: scaleOffset.top + 'px', transform:'rotateX(180deg)' }"
         >
           <span
             v-for="(item, index) in scaleOffset.yMark"
             :key="index"
-            :style="{ top: index * 50 + 2 + 'px' }"
+            :style="{ top: (index+1) * 50 - (item.offsetPx) + 'px',  transform:'rotateX(180deg)'}"
             class="n"
             >{{ item.id }}</span
           >
@@ -52,14 +52,14 @@
         <div
           class="vue-ruler-v"
           :style="{
-            top: 18 + scaleOffset.top + 'px',
+            top: 18 + scaleOffset.top -1 + 'px',
             height: `calc(100% - ${scaleOffset.top}px)`,
           }"
         >
           <span
             v-for="(item, index) in yScale"
             :key="index"
-            :style="{ top: index * 50 + 2 + 'px' }"
+            :style="{ top: index * 50 + 2 + 'px'}"
             class="n"
             >{{ item.id }}</span
           >
@@ -123,7 +123,7 @@ export default {
     contentLayout: {
       type: Object,
       default: () => {
-        return { top: 0, left: 0 };
+        return { top:0, left:0 };
       },
     }, // 内容部分布局
     parent: {
@@ -240,14 +240,16 @@ export default {
           xMark: [],
           yMark: [],
         };
-        for (let i = 0; i < contentLeft; i += 1) {
+        for (let i = 1; i < contentLeft; i += 1) {
           if (i % 50 === 0) {
-            this.scaleOffset.xMark.push({ id: i });
+            const offsetPx = i === 50 ? 14 : 22
+            this.scaleOffset.xMark.push({ id: i, offsetPx});
           }
         }
-        for (let i = 0; i < contentTop; i += 1) {
+        for (let i = 1; i < contentTop; i += 1) {
           if (i % 50 === 0) {
-            this.scaleOffset.yMark.push({ id: i });
+            const offsetPx = i === 50 ? 14 : 22
+            this.scaleOffset.yMark.push({ id: i, offsetPx });
           }
         }
       }
@@ -504,13 +506,22 @@ export default {
 
   &-v .n {
     width: 8px;
-    left: 3px;
+    left: 1px;
     word-wrap: break-word;
+    writing-mode: vertical-lr;
   }
 
   &-h .n {
     top: 1px;
   }
+
+  // &-offset-v .n{
+  //   transform: rotateY(180deg);
+  // }
+
+  // &-offset-h .n{
+  //   transform: rotateY(180deg);
+  // }
 
   &-ref-line-v,
   &-ref-line-h,
