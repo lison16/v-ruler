@@ -5,16 +5,26 @@
     onselectstart="return false;"
   >
     <section v-show="rulerToggle">
-      <div ref="horizontalRuler" class="vue-ruler-h-wrap" @mousedown.stop="horizontalDragRuler">
+      <div
+        ref="horizontalRuler"
+        class="vue-ruler-h-wrap"
+        @mousedown.stop="horizontalDragRuler"
+      >
         <div
           v-if="isScaleRevise"
           class="vue-ruler-h v-ruler-offset-h"
-          :style="{ width: scaleOffset.left + 'px', transform:'rotateY(180deg)'}"
+          :style="{
+            width: scaleOffset.left + 'px',
+            transform: 'rotateY(180deg)',
+          }"
         >
           <span
             v-for="(item, index) in scaleOffset.xMark"
             :key="index"
-            :style="{ left: (index+1) * 50 - (item.offsetPx) + 'px', transform:'rotateY(180deg)' }"
+            :style="{
+              left: (index + 1) * 50 - item.offsetPx + 'px',
+              transform: 'rotateY(180deg)',
+            }"
             class="n"
             >{{ item.id }}</span
           >
@@ -22,7 +32,7 @@
         <div
           class="vue-ruler-h"
           :style="{
-            left: 18 + scaleOffset.left - 1 + 'px',
+            left: this.leftTop + scaleOffset.left - 1 + 'px',
             width: `calc(100% - ${scaleOffset.left}px)`,
           }"
         >
@@ -35,16 +45,26 @@
           >
         </div>
       </div>
-      <div ref="verticalRuler" class="vue-ruler-v-wrap" @mousedown.stop="verticalDragRuler">
+      <div
+        ref="verticalRuler"
+        class="vue-ruler-v-wrap"
+        @mousedown.stop="verticalDragRuler"
+      >
         <div
           v-if="isScaleRevise"
           class="vue-ruler-v v-ruler-offset-v"
-          :style="{ height: scaleOffset.top + 'px', transform:'rotateX(180deg)' }"
+          :style="{
+            height: scaleOffset.top + 'px',
+            transform: 'rotateX(180deg)',
+          }"
         >
           <span
             v-for="(item, index) in scaleOffset.yMark"
             :key="index"
-            :style="{ top: (index+1) * 50 - (item.offsetPx) + 'px',  transform:'rotateX(180deg)'}"
+            :style="{
+              top: (index + 1) * 50 - item.offsetPx + 'px',
+              transform: 'rotateX(180deg)',
+            }"
             class="n"
             >{{ item.id }}</span
           >
@@ -52,14 +72,14 @@
         <div
           class="vue-ruler-v"
           :style="{
-            top: 18 + scaleOffset.top -1 + 'px',
+            top: this.leftTop + scaleOffset.top + 1 + 'px',
             height: `calc(100% - ${scaleOffset.top}px)`,
           }"
         >
           <span
             v-for="(item, index) in yScale"
             :key="index"
-            :style="{ top: index * 50 + 2 + 'px'}"
+            :style="{ top: index * 50 + 2 + 'px' }"
             class="n"
             >{{ item.id }}</span
           >
@@ -123,7 +143,7 @@ export default {
     contentLayout: {
       type: Object,
       default: () => {
-        return { top:0, left:0 };
+        return { top: 0, left: 0 };
       },
     }, // 内容部分布局
     parent: {
@@ -134,11 +154,15 @@ export default {
       type: Boolean,
       default: true,
     },
+    leftTop: {
+      type: Number,
+      default: 18
+    }
   },
   data() {
     return {
       size: 17,
-      left_top: 18, // 内容左上填充
+      left_top: this.leftTop, // 内容左上填充
       windowWidth: 0, // 窗口宽度
       windowHeight: 0, // 窗口高度
       xScale: [], // 水平刻度
@@ -195,6 +219,12 @@ export default {
       },
       immediate: true,
     },
+    contentLayout: {
+      immediate: true,
+      handler() {
+        this.setScaleOffset()
+      }
+    }
   },
   mounted() {
     on(document, "mousemove", this.dottedLineMove);
@@ -228,30 +258,32 @@ export default {
         ? this.dragHorizontalLine(id)
         : this.dragVerticalLine(id);
     },
+    setScaleOffset() {
+      // 根据内容部分进行刻度修正
+      const { left, top } = { ...this.contentLayout }
+      this.scaleOffset = {
+        left,
+        top,
+        xMark: [],
+        yMark: [],
+      };
+      for (let i = 1; i < left; i += 1) {
+        if (i % 50 === 0) {
+          const offsetPx = i === 50 ? 14 : 22
+          this.scaleOffset.xMark.push({ id: i, offsetPx });
+        }
+      }
+      for (let i = 1; i < top; i += 1) {
+        if (i % 50 === 0) {
+          const offsetPx = i === 50 ? 14 : 22
+          this.scaleOffset.yMark.push({ id: i, offsetPx });
+        }
+      }
+
+    },
     box() {
       if (this.isScaleRevise) {
-        // 根据内容部分进行刻度修正
-        const content = this.$refs.content;
-        const contentLeft = content.offsetLeft;
-        const contentTop = content.offsetTop;
-        this.scaleOffset = {
-          left: contentLeft,
-          top: contentTop,
-          xMark: [],
-          yMark: [],
-        };
-        for (let i = 1; i < contentLeft; i += 1) {
-          if (i % 50 === 0) {
-            const offsetPx = i === 50 ? 14 : 22
-            this.scaleOffset.xMark.push({ id: i, offsetPx});
-          }
-        }
-        for (let i = 1; i < contentTop; i += 1) {
-          if (i % 50 === 0) {
-            const offsetPx = i === 50 ? 14 : 22
-            this.scaleOffset.yMark.push({ id: i, offsetPx });
-          }
-        }
+        this.setScaleOffset()
       }
       if (this.parent) {
         const style = window.getComputedStyle(this.$el.parentNode, null);
@@ -423,9 +455,9 @@ export default {
             this.rulerToggle = !this.rulerToggle;
             this.$emit("update:visible", this.rulerToggle);
             if (this.rulerToggle) {
-              this.left_top = 18;
+              this.left_top = this.leftTtop;
             } else {
-              this.left_top = 0;
+              this.leftTtop = 0;
             }
             break;
         }
