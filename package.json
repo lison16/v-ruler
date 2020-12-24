@@ -1,7 +1,7 @@
 {
   "name": "v-ruler",
   "description": "vue标尺辅助线",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": "lizhigang.lison<lison16new@163.com>",
   "license": "MIT",
   "main": "dist/index.js",
