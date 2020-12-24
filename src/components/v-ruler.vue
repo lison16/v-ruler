@@ -232,8 +232,8 @@ export default {
       }
     }, // 虚线移动
     dottedLineUp ($event) {
-      this.setSpacing()
       if (this.isDrag) {
+        this.setSpacing()
         this.isDrag = false
         const cloneList = JSON.parse(JSON.stringify(this.value))
         switch (this.dragFlag) {
